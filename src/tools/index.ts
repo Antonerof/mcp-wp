@@ -7,6 +7,7 @@ import { mediaTools, mediaHandlers } from './media.js';
 import { userTools, userHandlers } from './users.js';
 import { pluginRepositoryTools, pluginRepositoryHandlers } from './plugin-repository.js';
 import { commentTools, commentHandlers } from './comments.js';
+import { blockTypesTools, blockTypesHandlers } from './block-types.js';
 
 // Combine all tools - now significantly reduced from ~65 to ~35 tools
 export const allTools: Tool[] = [
@@ -16,7 +17,8 @@ export const allTools: Tool[] = [
   ...mediaTools,                // ~5 tools
   ...userTools,                 // ~5 tools
   ...pluginRepositoryTools,     // ~2 tools
-  ...commentTools               // ~5 tools
+  ...commentTools,              // ~5 tools
+  ...blockTypesTools            // 2 tools (new)
 ];
 
 // Combine all handlers
@@ -27,5 +29,6 @@ export const toolHandlers = {
   ...mediaHandlers,
   ...userHandlers,
   ...pluginRepositoryHandlers,
-  ...commentHandlers
+  ...commentHandlers,
+  ...blockTypesHandlers
 };

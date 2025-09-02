@@ -57,7 +57,7 @@ export async function initWordPress() {
     await wpClient.get('');
     logToFile('Successfully connected to WordPress API');
   } catch (error: any) {
-    logToFile(`Failed to connect to WordPress API: ${error.message}`);
+    logToFile(`Failed to connect to WordPress API : ${error.message}`);
     throw new Error(`Failed to connect to WordPress API: ${error.message}`);
   }
 }
@@ -75,6 +75,7 @@ if (!fs.existsSync(LOG_DIR)) {
 export function logToFile(message: string) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${message}\n`;
+
   fs.appendFileSync(LOG_FILE, logMessage);
 }
 

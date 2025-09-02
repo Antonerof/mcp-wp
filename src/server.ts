@@ -7,7 +7,6 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { allTools, toolHandlers } from './tools/index.js';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 
 // Create MCP server instance
@@ -16,6 +15,7 @@ const server = new McpServer({
     version: "0.0.1"
 }, {
     capabilities: {
+        // Advertise full tool definitions (with descriptions) in handshake
         tools: allTools.reduce((acc, tool) => {
             acc[tool.name] = tool;
             return acc;
@@ -29,7 +29,7 @@ for (const tool of allTools) {
     if (!handler) continue;
     
     const wrappedHandler = async (args: any) => {
-        // The handler functions are already typed with their specific parameter types
+        // Handlers return a consistent { toolResult: { content, isError } } shape
         const result = await handler(args);
         return {
             content: result.toolResult.content.map((item: { type: string; text: string }) => ({
@@ -48,19 +48,19 @@ for (const tool of allTools) {
 
     // const schema = z.object(tool.inputSchema as z.ZodRawShape).catchall(z.unknown());
     
-    // The inputSchema is already in JSON Schema format with properties
-    // server.tool(tool.name, tool.inputSchema.shape, wrappedHandler);
-    // const zodSchema = z.any().optional();
-    // const jsonSchema = zodToJsonSchema(z.object(tool.inputSchema.properties as z.ZodRawShape));
-    // const parsedSchema = z.any().optional().parse(jsonSchema);
-
-    const zodSchema = z.object(tool.inputSchema.properties as z.ZodRawShape); 
-    server.tool(tool.name, zodSchema.shape, wrappedHandler)
+    // Register tool with validation schema; descriptions are provided via capabilities above
+    const zodSchema = z.object(tool.inputSchema.properties as z.ZodRawShape);
+    if (tool.description) {
+        server.tool(tool.name, tool.description, zodSchema.shape, wrappedHandler);
+    } else {
+        server.tool(tool.name, zodSchema.shape, wrappedHandler);
+    }
 
 }
 
 async function main() {
     const { logToFile } = await import('./wordpress.js');
+
     logToFile('Starting WordPress MCP server...');
     
     if (!process.env.WORDPRESS_API_URL) {
