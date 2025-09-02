@@ -4,15 +4,107 @@ This is a Model Context Protocol (MCP) server for WordPress, allowing you to int
 
 ## Usage 
 
-### Claude Desktop 
+### MCP Clients (Any Editor)
 
-1. Download and install [Claude Desktop](https://claude.ai/download).
-2. Open Claude Desktop settings and navigate to the "Developer" tab.
-3. Copy the contents of the `claude_desktop_config.json.example` file.
-4. Click "Edit Config" to open the `claude_desktop_config.json` file.
-5. Copy paste the contents of the example file into the config file. Make sure to replace the placeholder values with your actual values for the WordPress site. To generate the application keys, follow this guide - [Application Passwords](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide#Getting-Credentials).
-6. Save the configuration.
-7. Restart Claude Desktop.
+Works with any MCP-compatible editor or client. Point your editor at the server command and provide WordPress credentials via environment variables.
+
+1. Create a `.env` with:
+    - `WORDPRESS_API_URL`
+    - `WORDPRESS_USERNAME`
+    - `WORDPRESS_PASSWORD`
+2. Choose a launch command for your client:
+    - Use published package: `npx -y @instawp/mcp-wp`
+    - Use local build: `node ./build/server.js`
+    - Dev mode (optional): `node --loader tsx src/server.ts`
+3. In your editor’s MCP settings, add a server with stdio transport:
+    - name: `wordpress`
+    - command: one of the above
+    - env: load from `.env` or set inline in the client config
+4. Restart your editor/client.
+
+#### Example: Claude Desktop
+
+1. Install [Claude Desktop](https://claude.ai/download) and open Settings → Developer.
+2. Click “Edit Config” and use `claude_desktop_config.json.example` from this repo as a template.
+3. Provide an absolute path to `build/server.js` (or use the `npx` command) and set the WordPress env vars.
+4. Save and restart Claude Desktop. For credentials, see [Application Passwords](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide#Getting-Credentials).
+
+#### Example: VS Code
+
+Use VS Code to run and debug the MCP server while your MCP client (any editor) connects over stdio.
+
+1. Open this folder in VS Code and create a `.env` (see vars above).
+2. Install deps in the integrated terminal: `npm install`.
+3. Run the server:
+     - Dev (watch): `npm run dev`
+     - Built: `npm start` (after `npm run build`)
+4. Optional debug config (`.vscode/launch.json`):
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Dev: tsx server.ts",
+            "runtimeExecutable": "node",
+            "runtimeArgs": ["--loader", "tsx", "src/server.ts"],
+            "envFile": "${workspaceFolder}/.env",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Built: build/server.js",
+            "program": "${workspaceFolder}/build/server.js",
+            "envFile": "${workspaceFolder}/.env",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
+```
+
+#### Example: MCP server config (JSON)
+
+Register this server with any MCP client that accepts JSON configuration.
+
+Using the published package (npx):
+
+```json
+{
+    "mcpServers": {
+        "wordpress": {
+            "command": "npx",
+            "args": ["-y", "@instawp/mcp-wp"],
+            "env": {
+                "WORDPRESS_API_URL": "https://your-wordpress-site.com",
+                "WORDPRESS_USERNAME": "wp_username",
+                "WORDPRESS_PASSWORD": "your_application_password"
+            }
+        }
+    }
+}
+```
+
+Using a local build:
+
+```json
+{
+    "mcpServers": {
+        "wordpress": {
+            "command": "node",
+            "args": ["./build/server.js"],
+            "env": {
+                "WORDPRESS_API_URL": "https://your-wordpress-site.com",
+                "WORDPRESS_USERNAME": "wp_username",
+                "WORDPRESS_PASSWORD": "your_application_password"
+            }
+        }
+    }
+}
+```
+
 
 ## Features
 
@@ -72,6 +164,10 @@ Handles ALL taxonomies (categories, tags, custom taxonomies) with a single set o
     *   `search_plugins`: Search for plugins in the WordPress.org repository.
     *   `get_plugin_info`: Get detailed information about a plugin from the repository.
 
+*   **Block Types:**
+    *   `list_block_types`: List all available Gutenberg block types (core and custom). Optional filters: `context` (view|embed|edit) and `namespace` (e.g., "core").
+    *   `get_block_type`: Get details for a specific block type by name (e.g., `core/paragraph`, `core/heading`). Optional `context`.
+
 ### **Key Advantages**
 
 #### Smart URL Resolution
@@ -102,6 +198,9 @@ All taxonomy operations use a single `taxonomy` parameter:
   "taxonomy": "skill"            // for custom taxonomies
 }
 ```
+
+#### Gutenberg Block Discovery
+Discover and inspect Gutenberg blocks available on your site. Helpful for building block-based content programmatically or validating supported block capabilities.
 
 ## Using with npx and .env file
 
@@ -213,6 +312,7 @@ src/
     ├── comments.ts            # Comment management (~5 tools)
     ├── plugins.ts             # Plugin management (~5 tools)
     └── plugin-repository.ts   # WordPress.org plugin search (~2 tools)
+    └── block-types.ts         # Gutenberg block types listing and inspection (2 tools)
 ```
 
 ### Key Features
